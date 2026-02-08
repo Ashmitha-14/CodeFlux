@@ -1,0 +1,10 @@
+
+__pycache__/
+*.pyc
+.DS_Store
+venv/
+env/
+models_saved/
+risk_report.html
+.vscode/
+.idea/
