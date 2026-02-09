@@ -222,7 +222,9 @@ def create_heatmap(code, attention_weights, stats, output_path="risk_report.html
     </html>
     """
     
-    with open(output_path, "w") as f:
-        f.write(html_content)
-    
-    print(f"Heatmap saved to {output_path}")
+    if output_path:
+        with open(output_path, "w") as f:
+            f.write(html_content)
+        print(f"Heatmap saved to {output_path}")
+    else:
+        return html_content

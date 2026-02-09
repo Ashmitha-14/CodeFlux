@@ -36,7 +36,25 @@ CodeFlux is a prototype **Neuro-Symbolic AI system** that analyzes source code t
 
 ## 💻 Usage
 
-### CLI Mode
+### Web App Mode (New!)
+Start the web interface:
+```bash
+python3 src/api/app.py
+```
+Then open your browser to `http://localhost:5000`.
+
+### Docker Deployment
+Build and run with Docker:
+```bash
+docker build -t codeflux .
+docker run -p 5000:5000 codeflux
+```
+Or using Docker Compose:
+```bash
+docker-compose up --build
+```
+
+### CLI Mode (Legacy)
 Scan a single file:
 ```bash
 python3 demo.py path/to/file.py

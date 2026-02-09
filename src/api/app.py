@@ -1,5 +1,5 @@
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import sys
 import os
 import torch
@@ -10,19 +10,73 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.data.ast_parser import parse_code
 from src.data.graph_builder import ast_to_graph
 from src.models.hybrid_model import CodeFluxModel
+from src.utils.visualizer import create_heatmap
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 # Initialize model
 model = CodeFluxModel(feature_dim=5)
-model_path = "models_saved/codeflux_model.pth"
+# Use absolute path for robustness or relative from where app is run
+model_path = os.path.join(os.path.dirname(__file__), "../../models_saved/codeflux_model.pth")
+
 if os.path.exists(model_path):
     try:
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         print(f"Loaded trained model from {model_path}")
     except Exception as e:
         print(f"Failed to load model: {e}")
 model.eval()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/analyze_html', methods=['POST'])
+def analyze_html():
+    data = request.json
+    code = data.get('code')
+    
+    if not code:
+        return jsonify({"error": "No code provided"}), 400
+
+    # 1. Parse AST & Graph
+    parsed_ast = parse_code(code)
+    graph_data = ast_to_graph(parsed_ast['ast'])
+    
+    if graph_data is None:
+         return jsonify({"error": "Could not build graph. Check code syntax."}), 400
+
+    # 2. Tokenize (Mock)
+    input_ids = torch.randint(0, 1000, (1, 128))
+    attention_mask = torch.ones((1, 128))
+    
+    # Prepare Features
+    stats = parsed_ast['stats']
+    features = torch.tensor([[
+        float(stats['complexity']),
+        float(stats['max_depth']),
+        float(stats['num_functions']),
+        0.0, 0.0
+    ]])
+
+    # 3. Model Inference
+    with torch.no_grad():
+        risk_score, _, attentions = model(
+            input_ids, 
+            attention_mask, 
+            graph_data['x'], 
+            graph_data['edge_index'],
+            features
+        )
+    
+    # 4. Generate Heatmap HTML
+    cls_attn = attentions[0, :, 0, :].mean(dim=0).tolist()
+    html_report = create_heatmap(code, cls_attn, stats, output_path=None)
+    
+    return jsonify({
+        "html_report": html_report,
+        "risk_score": float(risk_score.item())
+    })
 
 @app.route('/analyze', methods=['POST'])
 def analyze():

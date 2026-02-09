@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeFlux - AI Risk Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --button-bg: #238636;
+            --button-hover: #2ea043;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            min-width: 400px;
+        }
+
+        .preview-pane {
+            flex: 1.5;
+            padding: 20px;
+            background-color: #010409;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: #0d1117;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            margin-bottom: 20px;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            background-color: var(--button-bg);
+            color: white;
+            border: 1px solid rgba(240, 246, 252, 0.1);
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            align-self: flex-end;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+        }
+
+        button:disabled {
+            background-color: var(--card-bg);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            border-color: var(--border);
+        }
+
+        iframe {
+            flex: 1;
+            border: none;
+            background-color: white;
+            /* Report is currently light/hybrid, iframe isolates it */
+            border-radius: 6px;
+        }
+
+        .loading {
+            display: none;
+            color: var(--text-secondary);
+            margin-right: 10px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>
+            <span>🧠</span> CodeFlux
+        </h1>
+        <span style="color: var(--text-secondary); font-size: 13px;">AI Code Reliability & Risk Analysis</span>
+    </header>
+
+    <div class="container">
+        <!-- Editor Side -->
+        <div class="editor-pane">
+            <h2>Source Code</h2>
+            <textarea id="codeInput" placeholder="# Paste your Python code here...
+def example():
+    return 'Hello World'"></textarea>
+
+            <div style="display: flex; align-items: center; justify-content: flex-end;">
+                <span class="loading" id="loadingText">Analyzing structure & semantics...</span>
+                <button id="analyzeBtn" onclick="analyzeCode()">Analyze Risk</button>
+            </div>
+        </div>
+
+        <!-- Preview Side -->
+        <div class="preview-pane">
+            <h2>Analysis Report</h2>
+            <iframe id="reportFrame" title="Risk Report"></iframe>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value;
+            const btn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loadingText');
+            const iframe = document.getElementById('reportFrame');
+
+            if (!code.trim()) {
+                alert("Please enter some code to analyze.");
+                return;
+            }
+
+            // UI State: Loading
+            btn.disabled = true;
+            btn.innerText = "Analyzing...";
+            loading.style.display = "block";
+
+            try {
+                const response = await fetch('/analyze_html', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Inject HTML into iframe
+                    const blob = new Blob([result.html_report], { type: 'text/html' });
+                    iframe.src = URL.createObjectURL(blob);
+                } else {
+                    alert("Error: " + (result.error || "Analysis failed"));
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Network error or server is down.");
+            } finally {
+                // UI State: Reset
+                btn.disabled = false;
+                btn.innerText = "Analyze Risk";
+                loading.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

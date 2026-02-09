@@ -1,12 +1,8 @@
-
 flask
 torch
-torch_geometric
-transformers
-gitpython
+torch-geometric
 networkx
-numpy
-pandas
+matplotlib
 scikit-learn
-shap
 tqdm
+gunicorn
